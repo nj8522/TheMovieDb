@@ -2,9 +2,11 @@ package com.movie.movierecommendation.repository
 
 import android.app.Application
 import android.util.Log
+import androidx.lifecycle.LiveData
 import com.movie.movierecommendation.retrofit.BaseApi
 import com.movie.movierecommendation.retrofit.pojo.Genre
 import com.movie.movierecommendation.retrofit.pojo.GenreList
+import com.movie.movierecommendation.retrofit.pojo.Movie
 import com.movie.movierecommendation.retrofit.service.HomePageService
 import com.movie.movierecommendation.room.MovieDb
 import com.movie.movierecommendation.room.table.GenreTable
@@ -24,7 +26,7 @@ class HomePageRepository(val pApplication: Application) {
     private val mIoDispatcher            = Dispatchers.IO
 
 
-    suspend fun checkIfGenreIsEmpty() : List<GenreTable> = withContext(mIoDispatcher) {
+    suspend fun checkIfGenreIsEmpty() : List<GenreList> = withContext(mIoDispatcher) {
         return@withContext mGenreDao.getAllGenre()
     }
 
@@ -39,8 +41,26 @@ class HomePageRepository(val pApplication: Application) {
         return@withContext null
     }
 
-    suspend fun insertAllGenreIntoDb(pGenre : MutableList<GenreTable>) = withContext(mIoDispatcher) {
+    suspend fun insertAllGenreIntoDb(pGenre : MutableList<GenreList>) = withContext(mIoDispatcher) {
         mGenreDao.insertAllGenre(pGenre)
     }
+
+   fun getAllGenreFromDb() : LiveData<List<GenreList>> = mGenreDao.getGenreLiveData()
+
+    suspend fun exploreMovie(pCurrentPage : Int, pGenreId : Int) : Response<Movie>? = withContext(mIoDispatcher) {
+        try {
+            val lBuilder : HomePageService = BaseApi.getAllGenre()
+            val lMovieQuery : MutableMap<String, String> = mutableMapOf()
+            lMovieQuery["api_key"] = ApiDetails.API_KEY
+            lMovieQuery["page"] = pCurrentPage.toString()
+            if (pGenreId != 0) lMovieQuery["with_genres"] = pGenreId.toString()
+            val lExploreMovies = lBuilder.exploreMovies(ApiDetails.ACCESS_TOKEN, lMovieQuery)
+            return@withContext lExploreMovies.execute()
+        } catch (e : Exception) {
+            e.printStackTrace()
+        }
+        return@withContext null
+    }
+
 
 }

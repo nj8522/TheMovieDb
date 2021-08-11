@@ -12,10 +12,8 @@
             android:layout_height="wrap_content"
             android:text="Movie Genre"
             android:textSize="20sp"
-            android:textColor="@color/black"
             android:padding="6dp"
             android:layout_margin="8dp"
-            android:background="@drawable/genre_rounded_background"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />

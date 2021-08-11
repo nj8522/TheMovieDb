@@ -1,14 +1,18 @@
 package com.movie.movierecommendation.adapter
 
-import android.database.DatabaseUtils
+import android.content.Context
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.movie.movierecommendation.R
 import com.movie.movierecommendation.databinding.HomeScreenLayoutBinding
+import com.movie.movierecommendation.retrofit.pojo.Results
 
-class RecentMovieAdapter(val pRecentMovieList : MutableList<String>) : RecyclerView.Adapter<RecentMovieAdapter.RecentMovieViewHolder>() {
+class RecentMovieAdapter(private val pRecentMovieList : MutableList<Results>, private val pContext : Context)
+    : RecyclerView.Adapter<RecentMovieAdapter.RecentMovieViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecentMovieViewHolder {
         val lLayout = LayoutInflater.from(parent.context)
@@ -18,16 +22,22 @@ class RecentMovieAdapter(val pRecentMovieList : MutableList<String>) : RecyclerV
             parent,
             false
         )
-        return  RecentMovieViewHolder(lRecentMovieView)
+        return  RecentMovieViewHolder(lRecentMovieView, pContext)
     }
 
     override fun onBindViewHolder(holder: RecentMovieViewHolder, position: Int) {
-        holder.bind()
+        holder.bind(pRecentMovieList[position])
     }
 
-    override fun getItemCount(): Int = 120
+    override fun getItemCount(): Int = pRecentMovieList.size
 
-    class RecentMovieViewHolder(binder : HomeScreenLayoutBinding) : RecyclerView.ViewHolder(binder.root) {
-        fun bind() {}
+    class RecentMovieViewHolder(private val binder: HomeScreenLayoutBinding, private val pContext: Context)
+        : RecyclerView.ViewHolder(binder.root) {
+        fun bind(pMovie : Results) {
+            Glide.with(pContext)
+                .load("https://image.tmdb.org/t/p/w500${pMovie.posterPath}")
+                .centerCrop()
+                .into(binder.movieImage)
+        }
     }
 }

@@ -3,18 +3,25 @@ package com.movie.movierecommendation.viewModel
 import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.movie.movierecommendation.repository.HomePageRepository
 import com.movie.movierecommendation.retrofit.pojo.GenreList
-import com.movie.movierecommendation.room.table.GenreTable
+import com.movie.movierecommendation.retrofit.pojo.Results
 import kotlinx.coroutines.launch
 import kotlin.coroutines.CoroutineContext
 
-class MoviePageViewModel(pApplication: Application, val pCoroutineContext : CoroutineContext)
+class MoviePageViewModel(pApplication: Application, private val pCoroutineContext : CoroutineContext)
     : AndroidViewModel(pApplication) {
 
-    private val TAG = "MoviePageViewModel"
-    private val mHomePageRepository = HomePageRepository(pApplication)
+    private val TAG                                                  = "MoviePageViewModel"
+    private val mHomePageRepository                                  = HomePageRepository(pApplication)
+    val mGenreObserver : MutableLiveData<LiveData<List<GenreList>>>  by lazy { MutableLiveData() }
+    val mMovieObserver : MutableLiveData<List<Results>>              by lazy { MutableLiveData() }
+    val mSelectedGenreObserver : MutableLiveData<List<GenreList>>    by lazy { MutableLiveData() }
+    private var mGenreId : Int                                       = 0
+
 
     fun checkGenreTable() {
         viewModelScope.launch(pCoroutineContext) {
@@ -42,17 +49,54 @@ class MoviePageViewModel(pApplication: Application, val pCoroutineContext : Coro
 
     fun insertGenreList(pGenreList: List<GenreList>) {
         viewModelScope.launch(pCoroutineContext) {
-            val lRoomTableGenre: MutableList<GenreTable> = mutableListOf()
-            for (pGenre in pGenreList) {
-                lRoomTableGenre.add(GenreTable(pGenre.id, pGenre.name))
+            val lGenreList : MutableList<GenreList> = mutableListOf()
+            lGenreList.add(0, GenreList(0, "Explore", true))
+            lGenreList.addAll(pGenreList)
+            mHomePageRepository.insertAllGenreIntoDb(lGenreList)
+            getGenre()
+        }
+    }
+
+    fun getGenre() {
+        viewModelScope.launch(pCoroutineContext) {
+            mGenreObserver.value = mHomePageRepository.getAllGenreFromDb()
+        }
+    }
+
+    fun getExploreMovies(pCurrentPage : Int, pGenreId : Int) {
+        try {
+            viewModelScope.launch(pCoroutineContext) {
+                val lResponse = mHomePageRepository.exploreMovie(pCurrentPage, pGenreId)
+                if (lResponse != null && lResponse.isSuccessful) {
+                    val lBody = lResponse.body()!!
+                    mMovieObserver.value = lBody.result
+                }
             }
-            mHomePageRepository.insertAllGenreIntoDb(lRoomTableGenre)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun changeGenre(pPosition: Int, pGenreList: MutableList<GenreList>) {
+        try {
+            val lGenreList : MutableList<GenreList> = mutableListOf()
+            for (pGenre in pGenreList.indices) {
+                if (pGenre == pPosition) {
+                    mGenreId = pGenreList[pGenre].id
+                    pGenreList[pGenre].isSelectedGenre = true
+                } else {
+                    pGenreList[pGenre].isSelectedGenre = false
+                }
+                lGenreList.add(pGenreList[pGenre])
+            }
+            mSelectedGenreObserver.value = lGenreList
+            getExploreMovies(1, mGenreId)
+
+        } catch (e : Exception) {
+            e.printStackTrace()
         }
     }
 
 
-    fun getGenre() {
-        Log.i(TAG, "getGenre: Logic is Working")
-    }
 
 }

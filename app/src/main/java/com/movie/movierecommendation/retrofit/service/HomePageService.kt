@@ -2,12 +2,10 @@ package com.movie.movierecommendation.retrofit.service
 
 import com.movie.movierecommendation.retrofit.pojo.Genre
 import com.movie.movierecommendation.retrofit.pojo.GenreList
+import com.movie.movierecommendation.retrofit.pojo.Movie
 import com.movie.movierecommendation.util.ApiDetails
 import retrofit2.Call
-import retrofit2.http.GET
-import retrofit2.http.Header
-import retrofit2.http.Headers
-import retrofit2.http.Query
+import retrofit2.http.*
 
 interface HomePageService {
 
@@ -18,5 +16,12 @@ interface HomePageService {
        @Query("api_key") pApiKey : String
    ) : Call<Genre>
 
+
+   @Headers(ApiDetails.HEADERS)
+   @GET("discover/movie")
+   fun exploreMovies(
+       @Header("Authorization")pAccessToken : String,
+       @QueryMap pExploreQuery : MutableMap<String, String>
+   ) : Call<Movie>
 
 }
